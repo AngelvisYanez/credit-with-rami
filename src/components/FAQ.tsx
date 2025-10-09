@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import ScheduleCallModal from './ScheduleCallModal'
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const faqs = [
     {
@@ -90,20 +89,14 @@ const FAQ = () => {
           <p className="text-gray-600 mb-4">
             Have more questions?
           </p>
-          <button 
-            onClick={() => setIsModalOpen(true)}
+          <Link 
+            href="/application"
             className="btn-primary"
           >
             Contact Now
-          </button>
+          </Link>
         </div>
       </div>
-      
-      {/* Modal */}
-      <ScheduleCallModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
     </section>
   )
 }

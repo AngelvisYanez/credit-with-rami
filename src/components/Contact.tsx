@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
 import { Mail, Phone, MapPin, Instagram } from 'lucide-react'
-import ScheduleCallModal from './ScheduleCallModal'
 
 const Contact = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
     <section id="contact" className="py-20 bg-white">
@@ -83,12 +81,12 @@ const Contact = () => {
                   Get started with a personalized consultation tailored to your business funding and credit building needs.
                 </p>
                 
-                <button
-                  onClick={() => setIsModalOpen(true)}
+                <Link
+                  href="/application"
                   className="w-full btn-primary text-lg py-4"
                 >
                   Start Free Consultation
-                </button>
+                </Link>
               </div>
               
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 mt-6">
@@ -123,12 +121,6 @@ const Contact = () => {
           </div>
         </div>
       </div>
-      
-      {/* Modal */}
-      <ScheduleCallModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
     </section>
   )
 }
