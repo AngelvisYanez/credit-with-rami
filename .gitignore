@@ -47,3 +47,28 @@ Thumbs.db
 # Logs
 logs
 *.log
+
+# Backup files and folders
+backup/
+*.zip
+*.tar.gz
+temp-build/
+
+# Netlify build files
+.netlify/
+.netlify/**
+
+# Additional temporary files
+test-complete-flow.js
+image/
+
+# Large files (videos, large archives)
+*.mp4
+*.zip
+*.tar.gz
+
+# Deployment scripts (keep in local only)
+complete-deployment.sh
+deploy.sh
+server-deploy.sh
+upload-to-server.sh
