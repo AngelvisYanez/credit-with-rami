@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export', // Comentado para usar Netlify Functions
-  // trailingSlash: true, // Comentado para usar Netlify Functions
+  // output: 'export', // Comentado para Netlify con API routes
+  trailingSlash: true, // Agregar slash final para compatibilidad
   // experimental: {
   //   optimizeCss: true,
   // },

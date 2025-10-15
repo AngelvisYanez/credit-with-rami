@@ -29,7 +29,7 @@ const Header = () => {
         : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav className="flex items-center justify-between h-20 md:h-24 lg:h-24">
+        <nav className="flex items-center justify-between h-16 md:h-18 lg:h-20 xl:h-24">
           
           {/* Logo */}
           <div className="flex items-center">
@@ -41,7 +41,7 @@ const Header = () => {
                   alt="Credit with Rami" 
                   width={280}
                   height={140}
-                  className={`h-14 md:h-16 lg:h-16 w-auto group-hover:scale-105 transition-all duration-300 ${
+                  className={`h-12 md:h-14 lg:h-16 xl:h-18 w-auto group-hover:scale-105 transition-all duration-300 ${
                     isScrolled ? 'opacity-0' : 'opacity-100'
                   }`}
                   priority
@@ -53,7 +53,7 @@ const Header = () => {
                   alt="Credit with Rami" 
                   width={280}
                   height={140}
-                  className={`absolute top-0 left-0 h-14 md:h-16 lg:h-16 w-auto group-hover:scale-105 transition-all duration-300 ${
+                  className={`absolute top-0 left-0 h-12 md:h-14 lg:h-16 xl:h-18 w-auto group-hover:scale-105 transition-all duration-300 ${
                     isScrolled ? 'opacity-100' : 'opacity-0'
                   }`}
                   priority
@@ -63,7 +63,7 @@ const Header = () => {
           </div>
           
           {/* Desktop & Tablet Navigation */}
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-6">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
             <ul className="flex items-center space-x-4 lg:space-x-6">
               <li>
                 <Link 
@@ -89,16 +89,17 @@ const Header = () => {
             </ul>
             
             {/* Contact Info */}
-            <div className="flex items-center space-x-3 lg:space-x-4 border-l border-gray-300 pl-4 lg:pl-6">
-              <div className="hidden lg:flex items-center space-x-4 xl:space-x-6">
+            <div className="flex items-center space-x-2 lg:space-x-3 border-l border-gray-300 pl-3 lg:pl-4">
+              <div className="hidden lg:flex items-center space-x-3 xl:space-x-4">
                 {/* Email */}
                 <a 
                   href="mailto:info@creditwithrami.com"
-                  className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
+                  className="flex items-center space-x-1.5 hover:scale-105 transition-transform duration-200"
                 >
                   <Mail className={`w-4 h-4 ${isScrolled ? 'text-blue-600' : 'text-cyan-400'}`} />
-                  <span className={`text-sm font-medium ${isScrolled ? 'text-gray-700' : 'text-gray-200'} hover:text-cyan-500 transition-colors duration-200`}>
-                    info@creditwithrami.com
+                  <span className={`text-xs xl:text-sm font-medium ${isScrolled ? 'text-gray-700' : 'text-gray-200'} hover:text-cyan-500 transition-colors duration-200`}>
+                    <span className="hidden xl:inline">info@creditwithrami.com</span>
+                    <span className="xl:hidden">Email</span>
                   </span>
                 </a>
                 
@@ -107,11 +108,12 @@ const Header = () => {
                   href="https://wa.me/17866204231"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
+                  className="flex items-center space-x-1.5 hover:scale-105 transition-transform duration-200"
                 >
                   <Phone className={`w-4 h-4 ${isScrolled ? 'text-blue-600' : 'text-cyan-400'}`} />
-                  <span className={`text-sm font-medium ${isScrolled ? 'text-gray-700' : 'text-gray-200'} hover:text-cyan-500 transition-colors duration-200`}>
-                    +1 (786) 620-4231
+                  <span className={`text-xs xl:text-sm font-medium ${isScrolled ? 'text-gray-700' : 'text-gray-200'} hover:text-cyan-500 transition-colors duration-200`}>
+                    <span className="hidden xl:inline">+1 (786) 620-4231</span>
+                    <span className="xl:hidden">Call</span>
                   </span>
                 </a>
               </div>
@@ -119,46 +121,45 @@ const Header = () => {
               {/* CTA Button */}
               <Link 
                 href="/application"
-                className="hidden lg:inline-block bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm lg:text-sm"
+                className="hidden lg:inline-block bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-3 xl:px-4 py-2 xl:py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-xs xl:text-sm"
               >
                 <span className="hidden xl:inline">Get your Business Funded</span>
-                <span className="inline xl:hidden">Get Funded</span>
+                <span className="xl:hidden">Get Funded</span>
               </Link>
             </div>
           </div>
           
           {/* Tablet Contact - Visible on tablets only */}
-          <div className="hidden md:flex xl:hidden items-center space-x-2 lg:space-x-3">
+          <div className="hidden md:flex lg:hidden items-center space-x-2">
             <a 
               href="mailto:info@creditwithrami.com"
-              className={`flex items-center space-x-1 lg:space-x-2 px-2 lg:px-3 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex items-center space-x-1 px-2 py-2 rounded-lg transition-all duration-200 ${
                 isScrolled || isMenuOpen
                   ? 'text-gray-700 hover:text-blue-600 hover:bg-blue-50' 
                   : 'text-gray-200 hover:text-cyan-400 hover:bg-white/10'
               }`}
             >
               <Mail className="w-4 h-4" />
-              <span className="text-xs lg:text-sm font-medium hidden lg:inline">Email</span>
+              <span className="text-xs font-medium">Email</span>
             </a>
             <a 
               href="https://wa.me/17866204231"
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex items-center space-x-1 lg:space-x-2 px-2 lg:px-3 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex items-center space-x-1 px-2 py-2 rounded-lg transition-all duration-200 ${
                 isScrolled || isMenuOpen
                   ? 'text-gray-700 hover:text-blue-600 hover:bg-blue-50' 
                   : 'text-gray-200 hover:text-cyan-400 hover:bg-white/10'
               }`}
             >
               <Phone className="w-4 h-4" />
-              <span className="text-xs lg:text-sm font-medium hidden lg:inline">Call</span>
+              <span className="text-xs font-medium">Call</span>
             </a>
             <Link 
               href="/application"
-              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md text-xs lg:text-sm"
+              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold px-3 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md text-xs"
             >
-              <span className="hidden lg:inline">Get Funded</span>
-              <span className="lg:hidden">Funded</span>
+              Get Funded
             </Link>
           </div>
 

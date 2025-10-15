@@ -2,8 +2,321 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react'
 import { Appointment, reloadAppointments } from '@/lib/database'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+} from '@dnd-kit/sortable'
+import {
+  useDroppable,
+} from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
+
+// Droppable Column Component
+interface DroppableColumnProps {
+  id: string
+  title: string
+  appointments: Appointment[]
+  bgColor: string
+  textColor: string
+  borderColor: string
+  icon: React.ReactNode
+  onEditDate: (appointment: Appointment) => void
+  onEditLead: (appointment: Appointment) => void
+  onComplete: (appointmentId: string) => void
+  onCancel: (appointmentId: string) => void
+  onMoveToProgress: (appointmentId: string) => void
+}
+
+const DroppableColumn: React.FC<DroppableColumnProps> = ({
+  id,
+  title,
+  appointments,
+  bgColor,
+  textColor,
+  borderColor,
+  icon,
+  onEditDate,
+  onEditLead,
+  onComplete,
+  onCancel,
+  onMoveToProgress
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: id,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${
+        isOver ? 'ring-2 ring-blue-400' : ''
+      }`}
+    >
+      <div className={`p-3 sm:p-4 border-b border-white/20 ${bgColor}`}>
+        <div className="flex items-center justify-between">
+          <h3 className={`text-base sm:text-lg font-semibold ${textColor} truncate`}>
+            {title}
+          </h3>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor} border ${borderColor} flex-shrink-0 ml-2`}>
+            {appointments.length}
+          </span>
+        </div>
+      </div>
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-[300px] sm:min-h-[400px]">
+        <SortableContext id={id} items={appointments.map(apt => apt.id)} strategy={verticalListSortingStrategy}>
+          {appointments.map((appointment) => (
+            <SortableItem
+              key={appointment.id}
+              appointment={appointment}
+              onEditDate={onEditDate}
+              onEditLead={onEditLead}
+              onComplete={onComplete}
+              onCancel={onCancel}
+              onMoveToProgress={onMoveToProgress}
+            />
+          ))}
+        </SortableContext>
+        {appointments.length === 0 && (
+          <div className="text-center py-8">
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-full ${bgColor} flex items-center justify-center`}>
+              {icon}
+            </div>
+            <p className={`text-sm ${textColor}`}>No {title.toLowerCase()}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Sortable Item Component
+interface SortableItemProps {
+  appointment: Appointment
+  onEditDate: (appointment: Appointment) => void
+  onEditLead: (appointment: Appointment) => void
+  onComplete: (appointmentId: string) => void
+  onCancel: (appointmentId: string) => void
+  onMoveToProgress: (appointmentId: string) => void
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({ 
+  appointment, 
+  onEditDate, 
+  onEditLead,
+  onComplete, 
+  onCancel, 
+  onMoveToProgress 
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: appointment.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition-all"
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center justify-between mb-2 sm:mb-3 cursor-grab active:cursor-grabbing hover:bg-white/5 rounded-lg p-1 transition-colors"
+      >
+        <div className="flex items-center space-x-1">
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+        </div>
+        <div className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+          <span className="inline-flex items-center">
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+            </svg>
+            Drag to move
+          </span>
+        </div>
+      </div>
+      
+      <div className="space-y-2 sm:space-y-3">
+        {/* Lead Info */}
+        <div>
+          <h4 className="font-semibold text-white text-sm truncate">{appointment.name}</h4>
+          <p className="text-blue-200 text-xs truncate">{appointment.businessName}</p>
+          <p className="text-gray-300 text-xs truncate">{appointment.businessType}</p>
+        </div>
+
+        {/* Contact Info */}
+        <div className="space-y-1">
+          <div className="flex items-center text-xs text-blue-200">
+            <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">{appointment.email}</span>
+          </div>
+          <div className="flex items-center text-xs text-blue-200">
+            <Phone className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">{appointment.phone}</span>
+          </div>
+        </div>
+
+        {/* Appointment Details */}
+        {appointment.preferredDate && (
+          <div className="space-y-1">
+            <div className="flex items-center text-xs text-blue-200">
+              <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{formatDate(appointment.preferredDate)}</span>
+            </div>
+            <div className="flex items-center text-xs text-blue-200">
+              <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{appointment.preferredTime}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Eligibility Status */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {appointment.isEligible ? (
+              <CheckCircle className="w-4 h-4 text-green-400 mr-1" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-400 mr-1" />
+            )}
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              appointment.isEligible 
+                ? 'bg-green-500/20 text-green-200' 
+                : 'bg-red-500/20 text-red-200'
+            }`}>
+              {appointment.isEligible ? 'Eligible' : 'Not Eligible'}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-1 sm:gap-2 pt-2 pointer-events-auto">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onEditLead(appointment)
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center cursor-pointer min-w-0"
+            title="Edit Lead Information"
+          >
+            <Edit className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">Edit Lead</span>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onEditDate(appointment)
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center cursor-pointer min-w-0"
+            title="Edit Date/Time"
+          >
+            <CalendarIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">Edit Date</span>
+          </button>
+          
+          {appointment.status === 'pending' && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onMoveToProgress(appointment.id)
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer min-w-0"
+              >
+                <span className="truncate">Progress</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onComplete(appointment.id)
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer min-w-0"
+              >
+                <span className="truncate">Complete</span>
+              </button>
+            </>
+          )}
+          
+          {appointment.status === 'confirmed' && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onComplete(appointment.id)
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer min-w-0"
+              >
+                <span className="truncate">Complete</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onCancel(appointment.id)
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer min-w-0"
+              >
+                <span className="truncate">Cancel</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AdminDashboardProps {
@@ -21,7 +334,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [eligibilityFilter, setEligibilityFilter] = useState<string>('all')
-  const [currentView, setCurrentView] = useState<'calendar' | 'list' | 'analytics'>('calendar')
+  const [currentView, setCurrentView] = useState<'calendar' | 'list' | 'analytics' | 'kanban'>('kanban')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [actionHistory, setActionHistory] = useState<Array<{
@@ -41,6 +354,55 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     cancelled: 0,
     eligibilityRate: 0
   })
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
+  const [newDate, setNewDate] = useState('')
+  const [newTime, setNewTime] = useState('')
+  const [isEditingDate, setIsEditingDate] = useState(false)
+  
+  // States for complete lead editing
+  const [isEditingLead, setIsEditingLead] = useState(false)
+  const [editingLeadData, setEditingLeadData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    businessName: '',
+    businessType: '',
+    creditCards: '',
+    establishedBusiness: '',
+    strongCreditScore: '',
+    cleanHistory: '',
+    preferredDate: '',
+    preferredTime: '',
+    timezone: 'America/New_York',
+    message: '',
+    eligibilityReason: ''
+  })
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [isAddingAppointment, setIsAddingAppointment] = useState(false)
+  const [newAppointmentData, setNewAppointmentData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    businessName: '',
+    businessType: '',
+    creditCards: '',
+    establishedBusiness: '',
+    strongCreditScore: '',
+    cleanHistory: '',
+    preferredDate: '',
+    preferredTime: '',
+    timezone: 'America/New_York',
+    message: '',
+    eligibilityReason: ''
+  })
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const checkAuth = () => {
     // In production, check JWT token
@@ -185,7 +547,475 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     setStats(newStats)
   }
 
+  // Kanban functions
+  const getAppointmentsByStage = (stageId: string) => {
+    const filtered = getFilteredAppointments()
+    
+    switch (stageId) {
+      case 'new-leads':
+        return filtered.filter(app => app.status === 'pending')
+      case 'in-progress':
+        return filtered.filter(app => app.status === 'confirmed')
+      case 'completed':
+        return filtered.filter(app => app.status === 'completed')
+      case 'cancelled':
+        return filtered.filter(app => app.status === 'cancelled')
+      default:
+        return []
+    }
+  }
 
+  const moveAppointmentToStage = async (appointmentId: string, newStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
+    setIsUpdatingStatus(true)
+    setUpdateMessage(null)
+
+    console.log(`🔄 moveAppointmentToStage called with ID: ${appointmentId}, newStatus: ${newStatus}`)
+    console.log(`📋 Current appointments in state:`, appointments.map(apt => ({ id: apt.id, name: apt.name, status: apt.status })))
+
+    // Verify the appointment exists in our state
+    const appointment = appointments.find(apt => apt.id === appointmentId)
+    if (!appointment) {
+      console.error(`❌ Appointment ${appointmentId} not found in frontend state`)
+      setUpdateMessage({
+        type: 'error',
+        text: `Appointment not found in frontend state. Please refresh the page.`
+      })
+      setIsUpdatingStatus(false)
+      return
+    }
+
+    console.log(`✅ Found appointment in frontend state: ${appointment.name}`)
+
+    try {
+      // Determine the action based on the new status
+      let action: string
+      if (newStatus === 'completed') {
+        action = 'complete'
+      } else if (newStatus === 'cancelled') {
+        action = 'cancel'
+      } else if (newStatus === 'confirmed') {
+        // For confirmed status, we need to update the appointment directly
+        const response = await fetch(`/api/appointments/${appointmentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          await fetchAppointments(true)
+          
+          setUpdateMessage({
+            type: 'success',
+            text: `Lead moved to ${newStatus} stage successfully!`
+          })
+          
+          setTimeout(() => {
+            setUpdateMessage(null)
+          }, 3000)
+          
+          return
+        } else {
+          setUpdateMessage({
+            type: 'error',
+            text: data.error || `Failed to move lead to ${newStatus} stage`
+          })
+          return
+        }
+      } else {
+        // For pending status, we also update directly
+        const response = await fetch(`/api/appointments/${appointmentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          await fetchAppointments(true)
+          
+          setUpdateMessage({
+            type: 'success',
+            text: `Lead moved to ${newStatus} stage successfully!`
+          })
+          
+          setTimeout(() => {
+            setUpdateMessage(null)
+          }, 3000)
+          
+          return
+        } else {
+          setUpdateMessage({
+            type: 'error',
+            text: data.error || `Failed to move lead to ${newStatus} stage`
+          })
+          return
+        }
+      }
+      
+      // For completed and cancelled, use the actions endpoint
+      const response = await fetch(`/api/appointments/${appointmentId}/actions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        await fetchAppointments(true)
+        
+        setUpdateMessage({
+          type: 'success',
+          text: `Lead moved to ${newStatus} stage successfully!`
+        })
+        
+        setTimeout(() => {
+          setUpdateMessage(null)
+        }, 3000)
+        
+      } else {
+        setUpdateMessage({
+          type: 'error',
+          text: data.error || `Failed to move lead to ${newStatus} stage`
+        })
+      }
+    } catch {
+      setUpdateMessage({
+        type: 'error',
+        text: `Network error. Please try again.`
+      })
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+
+  // Drag start handler
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  // Drag and drop handler
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+
+    if (!over) return
+
+    const appointmentId = active.id as string
+    const newStage = over.id as string
+
+    console.log(`🎯 handleDragEnd called with appointmentId: ${appointmentId}, newStage: ${newStage}`)
+    console.log(`📋 Current appointments in state:`, appointments.map(apt => ({ id: apt.id, name: apt.name, status: apt.status })))
+
+    // Map stage IDs to status
+    const stageToStatus: { [key: string]: Appointment['status'] } = {
+      'new-leads': 'pending',
+      'in-progress': 'confirmed',
+      'completed': 'completed',
+      'cancelled': 'cancelled'
+    }
+
+    const newStatus = stageToStatus[newStage]
+    if (!newStatus) return
+
+    // Don't update if it's the same status
+    const appointment = appointments.find(apt => apt.id === appointmentId)
+    if (appointment && appointment.status === newStatus) return
+
+    console.log(`🔄 Dragging appointment ${appointmentId} to ${newStage} (${newStatus})`)
+    await moveAppointmentToStage(appointmentId, newStatus)
+  }
+
+  // Function to handle date/time editing
+  const handleEditDate = (appointment: Appointment) => {
+    setEditingAppointment(appointment)
+    setNewDate(appointment.preferredDate || '')
+    setNewTime(appointment.preferredTime || '')
+    setIsEditingDate(true)
+  }
+
+  const handleSaveDate = async () => {
+    if (!editingAppointment || !newDate || !newTime) return
+
+    try {
+      // Update the appointment with new date/time
+      const response = await fetch(`/api/appointments/${editingAppointment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          preferredDate: newDate,
+          preferredTime: newTime
+        }),
+      })
+
+      if (response.ok) {
+        await fetchAppointments(true)
+        setUpdateMessage({
+          type: 'success',
+          text: 'Appointment date updated successfully!'
+        })
+        setTimeout(() => setUpdateMessage(null), 3000)
+      } else {
+        setUpdateMessage({
+          type: 'error',
+          text: 'Failed to update appointment date'
+        })
+      }
+    } catch {
+      setUpdateMessage({
+        type: 'error',
+        text: 'Network error. Please try again.'
+      })
+    } finally {
+      setIsEditingDate(false)
+      setEditingAppointment(null)
+    }
+  }
+
+  // Functions for complete lead editing
+  const handleEditLead = (appointment: Appointment) => {
+    setEditingAppointment(appointment)
+    setEditingLeadData({
+      name: appointment.name,
+      email: appointment.email,
+      phone: appointment.phone,
+      businessName: appointment.businessName,
+      businessType: appointment.businessType,
+      creditCards: appointment.creditCards,
+      establishedBusiness: appointment.establishedBusiness,
+      strongCreditScore: appointment.strongCreditScore,
+      cleanHistory: appointment.cleanHistory,
+      preferredDate: appointment.preferredDate,
+      preferredTime: appointment.preferredTime,
+      timezone: appointment.timezone,
+      message: appointment.message || '',
+      eligibilityReason: appointment.eligibilityReason || ''
+    })
+    setIsEditingLead(true)
+  }
+
+  const handleSaveLead = async () => {
+    if (!editingAppointment) return
+
+    // Validate required fields
+    const requiredFields = ['name', 'email', 'phone', 'businessName', 'businessType', 'preferredDate', 'preferredTime']
+    const missingFields = requiredFields.filter(field => !editingLeadData[field as keyof typeof editingLeadData])
+    
+    if (missingFields.length > 0) {
+      setUpdateMessage({
+        type: 'error',
+        text: `Missing required fields: ${missingFields.join(', ')}`
+      })
+      return
+    }
+
+    setIsUpdatingStatus(true)
+    setUpdateMessage(null)
+
+    try {
+      // Determine eligibility based on answers
+      const isEligible = 
+        editingLeadData.creditCards === 'Yes' &&
+        editingLeadData.establishedBusiness === 'Yes' &&
+        editingLeadData.strongCreditScore === 'Yes' &&
+        editingLeadData.cleanHistory === 'Yes'
+
+      const eligibilityReason = isEligible 
+        ? 'Meets all requirements' 
+        : 'Does not meet all eligibility requirements'
+
+      const updatedData = {
+        ...editingLeadData,
+        isEligible,
+        eligibilityReason
+      }
+
+      const response = await fetch(`/api/appointments/${editingAppointment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        await fetchAppointments(true)
+        
+        setUpdateMessage({
+          type: 'success',
+          text: `Lead "${editingLeadData.name}" updated successfully!`
+        })
+        
+        setIsEditingLead(false)
+        setEditingAppointment(null)
+        
+        setTimeout(() => {
+          setUpdateMessage(null)
+        }, 3000)
+        
+      } else {
+        setUpdateMessage({
+          type: 'error',
+          text: data.error || 'Failed to update lead'
+        })
+      }
+    } catch {
+      setUpdateMessage({
+        type: 'error',
+        text: 'Network error. Please try again.'
+      })
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleCancelEditLead = () => {
+    setIsEditingLead(false)
+    setEditingAppointment(null)
+    setEditingLeadData({
+      name: '',
+      email: '',
+      phone: '',
+      businessName: '',
+      businessType: '',
+      creditCards: '',
+      establishedBusiness: '',
+      strongCreditScore: '',
+      cleanHistory: '',
+      preferredDate: '',
+      preferredTime: '',
+      timezone: 'America/New_York',
+      message: '',
+      eligibilityReason: ''
+    })
+  }
+
+  // Functions for adding new appointment
+  const handleAddAppointment = async () => {
+    // Validate required fields
+    const requiredFields = ['name', 'email', 'phone', 'businessName', 'businessType', 'preferredDate', 'preferredTime']
+    const missingFields = requiredFields.filter(field => !newAppointmentData[field as keyof typeof newAppointmentData])
+    
+    if (missingFields.length > 0) {
+      setUpdateMessage({
+        type: 'error',
+        text: `Missing required fields: ${missingFields.join(', ')}`
+      })
+      return
+    }
+
+    setIsUpdatingStatus(true)
+    setUpdateMessage(null)
+
+    try {
+      // Determine eligibility based on answers
+      const isEligible = 
+        newAppointmentData.creditCards === 'Yes' &&
+        newAppointmentData.establishedBusiness === 'Yes' &&
+        newAppointmentData.strongCreditScore === 'Yes' &&
+        newAppointmentData.cleanHistory === 'Yes'
+
+      const eligibilityReason = isEligible 
+        ? 'Meets all requirements' 
+        : 'Does not meet all eligibility requirements'
+
+      const appointmentData = {
+        ...newAppointmentData,
+        isEligible,
+        eligibilityReason
+      }
+
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        await fetchAppointments(true)
+        
+        setUpdateMessage({
+          type: 'success',
+          text: `New lead "${data.appointment.name}" added successfully!`
+        })
+        
+        // Reset form
+        setNewAppointmentData({
+          name: '',
+          email: '',
+          phone: '',
+          businessName: '',
+          businessType: '',
+          creditCards: '',
+          establishedBusiness: '',
+          strongCreditScore: '',
+          cleanHistory: '',
+          preferredDate: '',
+          preferredTime: '',
+          timezone: 'America/New_York',
+          message: '',
+          eligibilityReason: ''
+        })
+        
+        setIsAddingAppointment(false)
+        
+        setTimeout(() => {
+          setUpdateMessage(null)
+        }, 3000)
+        
+      } else {
+        setUpdateMessage({
+          type: 'error',
+          text: data.error || 'Failed to add new lead'
+        })
+      }
+    } catch {
+      setUpdateMessage({
+        type: 'error',
+        text: 'Network error. Please try again.'
+      })
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  const resetNewAppointmentForm = () => {
+    setNewAppointmentData({
+      name: '',
+      email: '',
+      phone: '',
+      businessName: '',
+      businessType: '',
+      creditCards: '',
+      establishedBusiness: '',
+      strongCreditScore: '',
+      cleanHistory: '',
+      preferredDate: '',
+      preferredTime: '',
+      timezone: 'America/New_York',
+      message: '',
+      eligibilityReason: ''
+    })
+    setIsAddingAppointment(false)
+  }
 
   const handleCompleteAppointment = async () => {
     if (!selectedAppointment) return
@@ -625,35 +1455,43 @@ Rami - Credit With Rami`
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4 sm:gap-0">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <Image 
                 src="/favicon.png" 
                 alt="Credit With Rami Logo" 
                 width={48}
                 height={48}
-                className="w-12 h-12 object-contain"
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0"
               />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600">Manage scheduled appointments</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
+                <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Manage scheduled appointments</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 w-full sm:w-auto">
+              <button
+                onClick={() => setIsAddingAppointment(true)}
+                className="flex items-center px-3 sm:px-4 py-2 text-white bg-green-600 hover:bg-green-700 transition-colors rounded-lg text-sm sm:text-base flex-1 sm:flex-none"
+              >
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Add New Lead</span>
+                <span className="xs:hidden">Add Lead</span>
+              </button>
               <button
                 onClick={refreshAppointments}
-                className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg"
+                className="flex items-center px-3 sm:px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg text-sm sm:text-base"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
+                <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-gray-700 hover:text-red-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg"
+                className="flex items-center px-3 sm:px-4 py-2 text-gray-700 hover:text-red-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg text-sm sm:text-base"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -662,49 +1500,65 @@ Rami - Credit With Rami`
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* View Toggle */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4 sm:gap-0">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={() => setCurrentView('calendar')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
                 currentView === 'calendar' 
                   ? 'bg-blue-600 text-white shadow-lg' 
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
-              <Calendar className="w-4 h-4 inline mr-2" />
-              Calendar
+              <Calendar className="w-4 h-4 inline mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Calendar</span>
+              <span className="xs:hidden">Cal</span>
             </button>
             <button
               onClick={() => setCurrentView('list')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
                 currentView === 'list' 
                   ? 'bg-blue-600 text-white shadow-lg' 
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
-              <Users className="w-4 h-4 inline mr-2" />
-              List View
+              <Users className="w-4 h-4 inline mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">List View</span>
+              <span className="sm:hidden">List</span>
             </button>
             <button
               onClick={() => setCurrentView('analytics')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
                 currentView === 'analytics' 
                   ? 'bg-blue-600 text-white shadow-lg' 
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
-              <BarChart3 className="w-4 h-4 inline mr-2" />
-              Analytics
+              <BarChart3 className="w-4 h-4 inline mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Analytics</span>
+              <span className="sm:hidden">Stats</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('kanban')}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
+                currentView === 'kanban' 
+                  ? 'bg-blue-600 text-white shadow-lg' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 inline mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Leads Manager</span>
+              <span className="sm:hidden">Leads</span>
             </button>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
             <button
               onClick={exportAppointments}
-              className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="flex items-center px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm sm:text-base flex-1 sm:flex-none"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              <Download className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
             </button>
           </div>
         </div>
@@ -748,57 +1602,57 @@ Rami - Credit With Rami`
 
         {/* Stats Cards - Conditional based on view */}
         {currentView === 'calendar' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-3 sm:p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Calendar className="w-5 h-5 text-blue-300" />
+                <div className="p-1.5 sm:p-2 bg-blue-500/20 rounded-lg flex-shrink-0">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
                 </div>
-                <div className="ml-3">
-                  <p className="text-xs font-medium text-blue-200">Total</p>
-                  <p className="text-xl font-bold text-white">{stats.total}</p>
+                <div className="ml-2 sm:ml-3 min-w-0">
+                  <p className="text-xs font-medium text-blue-200 truncate">Total</p>
+                  <p className="text-lg sm:text-xl font-bold text-white">{stats.total}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-3 sm:p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <Clock className="w-5 h-5 text-yellow-300" />
+                <div className="p-1.5 sm:p-2 bg-yellow-500/20 rounded-lg flex-shrink-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
                 </div>
-                <div className="ml-3">
-                  <p className="text-xs font-medium text-yellow-200">Pending</p>
-                  <p className="text-xl font-bold text-white">{stats.pending}</p>
+                <div className="ml-2 sm:ml-3 min-w-0">
+                  <p className="text-xs font-medium text-yellow-200 truncate">Pending</p>
+                  <p className="text-lg sm:text-xl font-bold text-white">{stats.pending}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-3 sm:p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-300" />
+                <div className="p-1.5 sm:p-2 bg-green-500/20 rounded-lg flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-300" />
                 </div>
-                <div className="ml-3">
-                  <p className="text-xs font-medium text-green-200">Completed</p>
-                  <p className="text-xl font-bold text-white">{stats.completed}</p>
+                <div className="ml-2 sm:ml-3 min-w-0">
+                  <p className="text-xs font-medium text-green-200 truncate">Completed</p>
+                  <p className="text-lg sm:text-xl font-bold text-white">{stats.completed}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-3 sm:p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <X className="w-5 h-5 text-red-300" />
+                <div className="p-1.5 sm:p-2 bg-red-500/20 rounded-lg flex-shrink-0">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-300" />
                 </div>
-                <div className="ml-3">
-                  <p className="text-xs font-medium text-red-200">Cancelled</p>
-                  <p className="text-xl font-bold text-white">{stats.cancelled}</p>
+                <div className="ml-2 sm:ml-3 min-w-0">
+                  <p className="text-xs font-medium text-red-200 truncate">Cancelled</p>
+                  <p className="text-lg sm:text-xl font-bold text-white">{stats.cancelled}</p>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
               <div className="flex items-center">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -919,17 +1773,17 @@ Rami - Credit With Rami`
         {/* Calendar View */}
         {currentView === 'calendar' && (
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl">
-            <div className="p-6 border-b border-white/20">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Appointment Calendar</h2>
-                <div className="flex items-center space-x-4">
+            <div className="p-4 sm:p-6 border-b border-white/20">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
+                <h2 className="text-base sm:text-lg font-semibold text-white">Appointment Calendar</h2>
+                <div className="flex items-center space-x-2 sm:space-x-4">
                   <button
                     onClick={() => navigateMonth('prev')}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4 text-white" />
                   </button>
-                  <h3 className="text-lg font-semibold text-white min-w-[200px] text-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-white min-w-[150px] sm:min-w-[200px] text-center">
                     {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h3>
                   <button
@@ -942,8 +1796,8 @@ Rami - Credit With Rami`
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Calendar Grid */}
                 <div className="lg:col-span-2">
                   <div className="bg-white/5 rounded-xl p-4">
@@ -1064,45 +1918,47 @@ Rami - Credit With Rami`
 
         {/* List View - Categorized by Eligibility */}
         {currentView === 'list' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Eligible Appointments */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl">
-              <div className="p-6 border-b border-white/20">
-                <div className="flex items-center">
-                  <CheckCircle className="w-6 h-6 text-green-400 mr-3" />
-                  <h2 className="text-lg font-semibold text-white">Eligible Appointments</h2>
-                  <span className="ml-3 px-3 py-1 bg-green-500/20 text-green-200 rounded-full text-sm">
+              <div className="p-4 sm:p-6 border-b border-white/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0">
+                  <div className="flex items-center">
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 mr-2 sm:mr-3" />
+                    <h2 className="text-base sm:text-lg font-semibold text-white">Eligible Appointments</h2>
+                  </div>
+                  <span className="px-3 py-1 bg-green-500/20 text-green-200 rounded-full text-sm">
                     {getFilteredAppointments().filter(app => app.isEligible).length}
                   </span>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-4">
+              <div className="p-4 sm:p-6">
+                <div className="space-y-3 sm:space-y-4">
                   {getFilteredAppointments().filter(app => app.isEligible).map((appointment) => (
                     <div
                       key={appointment.id}
-                      className="bg-white/5 border border-green-500/20 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer"
+                      className="bg-white/5 border border-green-500/20 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition-all cursor-pointer"
                       onClick={() => setSelectedAppointment(appointment)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <p className="font-medium text-white">{appointment.name}</p>
-                              <p className="text-sm text-blue-200">{appointment.businessName}</p>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <div className="min-w-0">
+                              <p className="font-medium text-white truncate">{appointment.name}</p>
+                              <p className="text-sm text-blue-200 truncate">{appointment.businessName}</p>
                             </div>
-                            <div className="flex items-center space-x-4 text-sm text-blue-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-blue-200">
                               <div className="flex items-center">
-                                <Calendar className="w-4 h-4 mr-1" />
-                                {appointment.preferredDate}
+                                <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.preferredDate}</span>
                               </div>
                               <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                {appointment.preferredTime}
+                                <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.preferredTime}</span>
                               </div>
                               <div className="flex items-center">
-                                <Mail className="w-4 h-4 mr-1" />
-                                {appointment.email}
+                                <Mail className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.email}</span>
                               </div>
                             </div>
                           </div>
@@ -1126,42 +1982,44 @@ Rami - Credit With Rami`
 
             {/* Not Eligible Appointments */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl">
-              <div className="p-6 border-b border-white/20">
-                <div className="flex items-center">
-                  <AlertCircle className="w-6 h-6 text-red-400 mr-3" />
-                  <h2 className="text-lg font-semibold text-white">Not Eligible Appointments</h2>
-                  <span className="ml-3 px-3 py-1 bg-red-500/20 text-red-200 rounded-full text-sm">
+              <div className="p-4 sm:p-6 border-b border-white/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 mr-2 sm:mr-3" />
+                    <h2 className="text-base sm:text-lg font-semibold text-white">Not Eligible Appointments</h2>
+                  </div>
+                  <span className="px-3 py-1 bg-red-500/20 text-red-200 rounded-full text-sm">
                     {getFilteredAppointments().filter(app => !app.isEligible).length}
                   </span>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-4">
+              <div className="p-4 sm:p-6">
+                <div className="space-y-3 sm:space-y-4">
                   {getFilteredAppointments().filter(app => !app.isEligible).map((appointment) => (
                     <div
                       key={appointment.id}
-                      className="bg-white/5 border border-red-500/20 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer"
+                      className="bg-white/5 border border-red-500/20 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition-all cursor-pointer"
                       onClick={() => setSelectedAppointment(appointment)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <p className="font-medium text-white">{appointment.name}</p>
-                              <p className="text-sm text-blue-200">{appointment.businessName}</p>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <div className="min-w-0">
+                              <p className="font-medium text-white truncate">{appointment.name}</p>
+                              <p className="text-sm text-blue-200 truncate">{appointment.businessName}</p>
                             </div>
-                            <div className="flex items-center space-x-4 text-sm text-blue-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-blue-200">
                               <div className="flex items-center">
-                                <Calendar className="w-4 h-4 mr-1" />
-                                {appointment.preferredDate}
+                                <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.preferredDate}</span>
                               </div>
                               <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                {appointment.preferredTime}
+                                <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.preferredTime}</span>
                               </div>
                               <div className="flex items-center">
-                                <Mail className="w-4 h-4 mr-1" />
-                                {appointment.email}
+                                <Mail className="w-4 h-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{appointment.email}</span>
                               </div>
                             </div>
                           </div>
@@ -1244,6 +2102,110 @@ Rami - Credit With Rami`
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Kanban View */}
+        {currentView === 'kanban' && (
+          <div className="space-y-6">
+            {/* Update Message */}
+            {updateMessage && (
+              <div className={`p-4 rounded-lg ${
+                updateMessage.type === 'success' 
+                  ? 'bg-green-500/20 border border-green-400/30 text-green-200' 
+                  : 'bg-red-500/20 border border-red-400/30 text-red-200'
+              }`}>
+                <div className="flex items-center">
+                  {updateMessage.type === 'success' ? (
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                  )}
+                  <span className="font-medium">{updateMessage.text}</span>
+                </div>
+              </div>
+            )}
+
+
+            {/* Kanban Board with Drag and Drop */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <DroppableColumn
+                  id="new-leads"
+                  title="New Leads"
+                  appointments={getAppointmentsByStage('new-leads')}
+                  bgColor="bg-blue-50"
+                  textColor="text-blue-600"
+                  borderColor="border-blue-200"
+                  icon={<Plus className="w-6 h-6 text-blue-600" />}
+                  onEditDate={handleEditDate}
+                  onEditLead={handleEditLead}
+                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
+                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                />
+
+                <DroppableColumn
+                  id="in-progress"
+                  title="In Progress"
+                  appointments={getAppointmentsByStage('in-progress')}
+                  bgColor="bg-yellow-50"
+                  textColor="text-yellow-600"
+                  borderColor="border-yellow-200"
+                  icon={<Clock className="w-6 h-6 text-yellow-600" />}
+                  onEditDate={handleEditDate}
+                  onEditLead={handleEditLead}
+                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
+                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                />
+
+                <DroppableColumn
+                  id="completed"
+                  title="Completed"
+                  appointments={getAppointmentsByStage('completed')}
+                  bgColor="bg-green-50"
+                  textColor="text-green-600"
+                  borderColor="border-green-200"
+                  icon={<CheckCircle className="w-6 h-6 text-green-600" />}
+                  onEditDate={handleEditDate}
+                  onEditLead={handleEditLead}
+                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
+                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                />
+
+                <DroppableColumn
+                  id="cancelled"
+                  title="Cancelled"
+                  appointments={getAppointmentsByStage('cancelled')}
+                  bgColor="bg-red-50"
+                  textColor="text-red-600"
+                  borderColor="border-red-200"
+                  icon={<X className="w-6 h-6 text-red-600" />}
+                  onEditDate={handleEditDate}
+                  onEditLead={handleEditLead}
+                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
+                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                />
+              </div>
+
+              <DragOverlay>
+                {activeId ? (
+                  <div className="bg-white/20 backdrop-blur-lg rounded-xl p-4 border border-white/30 shadow-2xl">
+                    <div className="text-white font-semibold text-sm">
+                      {appointments.find(apt => apt.id === activeId)?.name}
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         )}
 
@@ -1450,6 +2412,634 @@ Rami - Credit With Rami`
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Date Modal */}
+        {isEditingDate && editingAppointment && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-md w-full">
+              <div className="p-6 border-b border-white/20">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white">Edit Appointment Date</h3>
+                  <button
+                    onClick={() => setIsEditingDate(false)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">
+                      Client
+                    </label>
+                    <p className="text-white font-semibold">{editingAppointment.name}</p>
+                    <p className="text-blue-200 text-sm">{editingAppointment.businessName}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">
+                      New Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">
+                      New Time
+                    </label>
+                    <select
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select time</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={handleSaveDate}
+                      disabled={!newDate || !newTime}
+                      className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setIsEditingDate(false)}
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Lead Modal */}
+        {isEditingLead && editingAppointment && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-white/20">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white">Edit Lead Information</h3>
+                  <button
+                    onClick={handleCancelEditLead}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-blue-200 border-b border-white/20 pb-2">
+                      Personal Information
+                    </h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={editingLeadData.name}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter full name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={editingLeadData.email}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        value={editingLeadData.phone}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Business Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-blue-200 border-b border-white/20 pb-2">
+                      Business Information
+                    </h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Business Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={editingLeadData.businessName}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, businessName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter business name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Business Type *
+                      </label>
+                      <select
+                        value={editingLeadData.businessType}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, businessType: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select business type</option>
+                        <option value="Restaurant" className="bg-gray-800 text-white">Restaurant</option>
+                        <option value="Retail" className="bg-gray-800 text-white">Retail</option>
+                        <option value="Service" className="bg-gray-800 text-white">Service</option>
+                        <option value="Construction" className="bg-gray-800 text-white">Construction</option>
+                        <option value="Healthcare" className="bg-gray-800 text-white">Healthcare</option>
+                        <option value="Technology" className="bg-gray-800 text-white">Technology</option>
+                        <option value="Manufacturing" className="bg-gray-800 text-white">Manufacturing</option>
+                        <option value="Other" className="bg-gray-800 text-white">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Message
+                      </label>
+                      <textarea
+                        value={editingLeadData.message}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, message: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] resize-none"
+                        placeholder="Additional information"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Eligibility Questions */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-blue-200 border-b border-white/20 pb-2 mb-4">
+                    Eligibility Assessment
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Credit Cards (2+ totaling $5K+)
+                      </label>
+                      <select
+                        value={editingLeadData.creditCards}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, creditCards: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Established Business (6+ months)
+                      </label>
+                      <select
+                        value={editingLeadData.establishedBusiness}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, establishedBusiness: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Strong Credit Score (700+)
+                      </label>
+                      <select
+                        value={editingLeadData.strongCreditScore}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, strongCreditScore: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Clean Credit History
+                      </label>
+                      <select
+                        value={editingLeadData.cleanHistory}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, cleanHistory: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scheduling */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-blue-200 border-b border-white/20 pb-2 mb-4">
+                    Appointment Scheduling
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Preferred Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={editingLeadData.preferredDate}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, preferredDate: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Preferred Time *
+                      </label>
+                      <select
+                        value={editingLeadData.preferredTime}
+                        onChange={(e) => setEditingLeadData(prev => ({ ...prev, preferredTime: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select time</option>
+                        <option value="9:00 AM" className="bg-gray-800 text-white">9:00 AM</option>
+                        <option value="10:00 AM" className="bg-gray-800 text-white">10:00 AM</option>
+                        <option value="11:00 AM" className="bg-gray-800 text-white">11:00 AM</option>
+                        <option value="12:00 PM" className="bg-gray-800 text-white">12:00 PM</option>
+                        <option value="1:00 PM" className="bg-gray-800 text-white">1:00 PM</option>
+                        <option value="2:00 PM" className="bg-gray-800 text-white">2:00 PM</option>
+                        <option value="3:00 PM" className="bg-gray-800 text-white">3:00 PM</option>
+                        <option value="4:00 PM" className="bg-gray-800 text-white">4:00 PM</option>
+                        <option value="5:00 PM" className="bg-gray-800 text-white">5:00 PM</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-6">
+                  <button
+                    onClick={handleSaveLead}
+                    disabled={isUpdatingStatus}
+                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center transform hover:scale-105 active:scale-95 disabled:scale-100 shadow-lg hover:shadow-green-500/25"
+                  >
+                    {isUpdatingStatus ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Updating Lead...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Update Lead
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancelEditLead}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-gray-500/25"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add New Appointment Modal */}
+        {isAddingAppointment && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6 border-b border-white/20">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white">Add New Lead</h3>
+                  <button
+                    onClick={resetNewAppointmentForm}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Personal Information</h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={newAppointmentData.name}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] text-sm sm:text-base"
+                        placeholder="Enter full name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={newAppointmentData.email}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        value={newAppointmentData.phone}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Business Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-white mb-4">Business Information</h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Business Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={newAppointmentData.businessName}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, businessName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98]"
+                        placeholder="Enter business name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Business Type *
+                      </label>
+                      <select
+                        value={newAppointmentData.businessType}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, businessType: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="">Select business type</option>
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Retail">Retail</option>
+                        <option value="Service">Service</option>
+                        <option value="Construction">Construction</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Message
+                      </label>
+                      <textarea
+                        value={newAppointmentData.message}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, message: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-300 transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] resize-none"
+                        placeholder="Additional information"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Eligibility Questions */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-white mb-4">Eligibility Assessment</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Credit Cards (2+ totaling $5K+)
+                      </label>
+                      <select
+                        value={newAppointmentData.creditCards}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, creditCards: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Established Business (6+ months)
+                      </label>
+                      <select
+                        value={newAppointmentData.establishedBusiness}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, establishedBusiness: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Strong Credit Score (700+)
+                      </label>
+                      <select
+                        value={newAppointmentData.strongCreditScore}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, strongCreditScore: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Clean Credit History
+                      </label>
+                      <select
+                        value={newAppointmentData.cleanHistory}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, cleanHistory: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select</option>
+                        <option value="Yes" className="bg-gray-800 text-white">Yes</option>
+                        <option value="No" className="bg-gray-800 text-white">No</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Appointment Scheduling */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-white mb-4">Appointment Scheduling</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Preferred Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={newAppointmentData.preferredDate}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, preferredDate: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
+                        Preferred Time *
+                      </label>
+                      <select
+                        value={newAppointmentData.preferredTime}
+                        onChange={(e) => setNewAppointmentData(prev => ({ ...prev, preferredTime: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white transition-all duration-300 hover:bg-white/15 hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/20 active:bg-white/25 active:scale-[0.98] cursor-pointer appearance-none bg-no-repeat bg-right bg-[length:16px] pr-10"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`
+                        }}
+                      >
+                        <option value="" className="bg-gray-800 text-white">Select time</option>
+                        <option value="9:00 AM" className="bg-gray-800 text-white">9:00 AM</option>
+                        <option value="10:00 AM" className="bg-gray-800 text-white">10:00 AM</option>
+                        <option value="11:00 AM" className="bg-gray-800 text-white">11:00 AM</option>
+                        <option value="12:00 PM" className="bg-gray-800 text-white">12:00 PM</option>
+                        <option value="1:00 PM" className="bg-gray-800 text-white">1:00 PM</option>
+                        <option value="2:00 PM" className="bg-gray-800 text-white">2:00 PM</option>
+                        <option value="3:00 PM" className="bg-gray-800 text-white">3:00 PM</option>
+                        <option value="4:00 PM" className="bg-gray-800 text-white">4:00 PM</option>
+                        <option value="5:00 PM" className="bg-gray-800 text-white">5:00 PM</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-6">
+                  <button
+                    onClick={handleAddAppointment}
+                    disabled={isUpdatingStatus}
+                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center transform hover:scale-105 active:scale-95 disabled:scale-100 shadow-lg hover:shadow-green-500/25"
+                  >
+                    {isUpdatingStatus ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Adding Lead...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Lead
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={resetNewAppointmentForm}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-gray-500/25"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>

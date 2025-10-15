@@ -1,6 +1,8 @@
 // Simple in-memory database for appointments
 // In production, you would use a real database like PostgreSQL, MongoDB, etc.
 
+// Note: fs and path are only available on server side
+
 export interface Appointment {
   id: string;
   name: string;
@@ -45,17 +47,60 @@ const adminUsers: AdminUser[] = [
   }
 ];
 
-// Load appointments from localStorage on initialization
-if (typeof window !== 'undefined') {
-  const savedAppointments = localStorage.getItem('appointments');
-  if (savedAppointments) {
+// Function to load appointments from localStorage (works on both client and server)
+const loadAppointmentsFromStorage = () => {
+  if (typeof window !== 'undefined') {
+    // Client side
+    const savedAppointments = localStorage.getItem('appointments');
+    if (savedAppointments) {
+      try {
+        appointments = JSON.parse(savedAppointments);
+        console.log(`📱 Loaded ${appointments.length} appointments from localStorage`);
+      } catch (error) {
+        console.error('Error parsing localStorage appointments:', error);
+      }
+    }
+  } else {
+    // Server side - try to load from a file
     try {
-      appointments = JSON.parse(savedAppointments);
-    } catch {
-      // Silent error handling for production
+      // Use dynamic require to avoid build issues
+      const fs = eval('require')('fs');
+      const path = eval('require')('path');
+      const filePath = path.join(process.cwd(), 'appointments.json');
+      
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        appointments = JSON.parse(fileContent);
+        console.log(`🖥️ Loaded ${appointments.length} appointments from file`);
+      } else {
+        console.log('📁 No appointments file found, starting with empty array');
+      }
+    } catch (error) {
+      // If file doesn't exist or can't be read, keep empty array
+      console.error('Error loading appointments file:', error);
     }
   }
-}
+};
+
+// Function to save appointments to file (server side)
+const saveAppointmentsToFile = () => {
+  if (typeof window === 'undefined') {
+    // Server side only
+    try {
+      // Use dynamic require to avoid build issues
+      const fs = eval('require')('fs');
+      const path = eval('require')('path');
+      const filePath = path.join(process.cwd(), 'appointments.json');
+      
+      fs.writeFileSync(filePath, JSON.stringify(appointments, null, 2));
+    } catch (error) {
+      console.error('Error saving appointments to file:', error);
+    }
+  }
+};
+
+// Load appointments from localStorage on initialization
+loadAppointmentsFromStorage();
 
 // Appointment functions
 export const createAppointment = (appointmentData: Omit<Appointment, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Appointment => {
@@ -69,23 +114,31 @@ export const createAppointment = (appointmentData: Omit<Appointment, 'id' | 'sta
   
   appointments.push(appointment);
   
-  // Save to localStorage
+  // Save to localStorage (client) and file (server)
   if (typeof window !== 'undefined') {
     localStorage.setItem('appointments', JSON.stringify(appointments));
+  } else {
+    saveAppointmentsToFile();
   }
   
   return appointment;
 };
 
 export const getAllAppointments = (): Appointment[] => {
+  // Reload appointments from storage first (in case they were updated)
+  loadAppointmentsFromStorage();
   return appointments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 export const getAppointmentById = (id: string): Appointment | undefined => {
+  // Reload appointments from storage first (in case they were updated)
+  loadAppointmentsFromStorage();
   return appointments.find(appointment => appointment.id === id);
 };
 
 export const updateAppointmentStatus = (id: string, status: Appointment['status']): Appointment | null => {
+  // Reload appointments from storage first (in case they were updated)
+  loadAppointmentsFromStorage();
   
   const appointment = appointments.find(app => app.id === id);
   if (appointment) {
@@ -94,11 +147,34 @@ export const updateAppointmentStatus = (id: string, status: Appointment['status'
     appointment.updatedAt = new Date().toISOString();
     
     
-    // Save to localStorage (only on client side)
+    // Save to localStorage (client) and file (server)
     if (typeof window !== 'undefined') {
       localStorage.setItem('appointments', JSON.stringify(appointments));
     } else {
-      // On server side, we'll save to localStorage when the client fetches
+      saveAppointmentsToFile();
+    }
+    
+    return appointment;
+  }
+  
+  return null;
+};
+
+export const updateAppointment = (id: string, updates: Partial<Appointment>): Appointment | null => {
+  // Reload appointments from storage first (in case they were updated)
+  loadAppointmentsFromStorage();
+  
+  const appointment = appointments.find(app => app.id === id);
+  if (appointment) {
+    // Update the appointment with new data
+    Object.assign(appointment, updates);
+    appointment.updatedAt = new Date().toISOString();
+    
+    // Save to localStorage (client) and file (server)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('appointments', JSON.stringify(appointments));
+    } else {
+      saveAppointmentsToFile();
     }
     
     return appointment;
