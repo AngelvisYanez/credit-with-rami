@@ -14,7 +14,7 @@ datasource db {
 model Appointment {
   id                String   @id @default(cuid())
   name              String
-  email             String
+  email             String   @unique
   phone             String
   businessName      String
   businessType      String?
