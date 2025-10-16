@@ -1180,7 +1180,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   const generateWhatsAppMessage = (appointment: Appointment, status: Appointment['status']) => {
     const statusMessages = {
-      confirmed: `🎉 Great news! Your appointment has been CONFIRMED.
+      [Status.CONFIRMED]: `🎉 Great news! Your appointment has been CONFIRMED.
 
 📅 Date: ${appointment.preferredDate}
 ⏰ Time: ${appointment.preferredTime}
@@ -1193,7 +1193,7 @@ If you need to reschedule, please contact us as soon as possible.
 Best regards,
 Rami - Credit With Rami`,
 
-      completed: `✅ Thank you for your time! Your appointment has been marked as COMPLETED.
+      [Status.COMPLETED]: `✅ Thank you for your time! Your appointment has been marked as COMPLETED.
 
 We hope our consultation was helpful for your business funding needs. If you have any follow-up questions or need additional assistance, please don't hesitate to reach out.
 
@@ -1202,7 +1202,7 @@ We're here to help you secure the funding your business deserves!
 Best regards,
 Rami - Credit With Rami`,
 
-      cancelled: `⚠️ Your appointment has been CANCELLED.
+      [Status.CANCELLED]: `⚠️ Your appointment has been CANCELLED.
 
 📅 Date: ${appointment.preferredDate}
 ⏰ Time: ${appointment.preferredTime}
@@ -1214,7 +1214,7 @@ We're still here to help you secure your business funding!
 Best regards,
 Rami - Credit With Rami`,
 
-      pending: `📋 Your appointment status has been updated to PENDING.
+      [Status.PENDING]: `📋 Your appointment status has been updated to PENDING.
 
 📅 Date: ${appointment.preferredDate}
 ⏰ Time: ${appointment.preferredTime}
