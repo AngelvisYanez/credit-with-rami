@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react'
-import { Appointment, reloadAppointments } from '@/lib/database-prisma'
+import { Appointment, reloadAppointments, Status } from '@/lib/database-prisma'
 import {
   DndContext,
   closestCenter,
@@ -259,7 +259,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
             <span className="truncate">Edit Date</span>
           </button>
           
-          {appointment.status === 'pending' && (
+          {appointment.status === Status.PENDING && (
             <>
               <button
                 onClick={(e) => {
@@ -286,7 +286,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
             </>
           )}
           
-          {appointment.status === 'confirmed' && (
+          {appointment.status === Status.CONFIRMED && (
             <>
               <button
                 onClick={(e) => {
@@ -528,10 +528,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     
     const total = appointments.length
     const eligible = appointments.filter(app => app.isEligible).length
-    const pending = appointments.filter(app => app.status === 'pending').length
-    const confirmed = appointments.filter(app => app.status === 'confirmed').length
-    const completed = appointments.filter(app => app.status === 'completed').length
-    const cancelled = appointments.filter(app => app.status === 'cancelled').length
+    const pending = appointments.filter(app => app.status === Status.PENDING).length
+    const confirmed = appointments.filter(app => app.status === Status.CONFIRMED).length
+    const completed = appointments.filter(app => app.status === Status.COMPLETED).length
+    const cancelled = appointments.filter(app => app.status === Status.CANCELLED).length
 
 
     const newStats = {
@@ -553,13 +553,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     
     switch (stageId) {
       case 'new-leads':
-        return filtered.filter(app => app.status === 'pending')
+        return filtered.filter(app => app.status === Status.PENDING)
       case 'in-progress':
-        return filtered.filter(app => app.status === 'confirmed')
+        return filtered.filter(app => app.status === Status.CONFIRMED)
       case 'completed':
-        return filtered.filter(app => app.status === 'completed')
+        return filtered.filter(app => app.status === Status.COMPLETED)
       case 'cancelled':
-        return filtered.filter(app => app.status === 'cancelled')
+        return filtered.filter(app => app.status === Status.CANCELLED)
       default:
         return []
     }
@@ -1588,7 +1588,7 @@ Rami - Credit With Rami`
                     </div>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    entry.status === 'completed' 
+                    entry.status === Status.COMPLETED 
                       ? 'bg-green-500/20 text-green-200' 
                       : 'bg-red-500/20 text-red-200'
                   }`}>
@@ -1842,9 +1842,9 @@ Rami - Credit With Rami`
                                   <div
                                     key={appointment.id}
                                     className={`text-xs p-1 rounded mb-1 truncate ${
-                                      appointment.status === 'pending' ? 'bg-yellow-500/20 text-yellow-200' :
-                                      appointment.status === 'confirmed' ? 'bg-blue-500/20 text-blue-200' :
-                                      appointment.status === 'completed' ? 'bg-green-500/20 text-green-200' :
+                                      appointment.status === Status.PENDING ? 'bg-yellow-500/20 text-yellow-200' :
+                                      appointment.status === Status.CONFIRMED ? 'bg-blue-500/20 text-blue-200' :
+                                      appointment.status === Status.COMPLETED ? 'bg-green-500/20 text-green-200' :
                                       'bg-red-500/20 text-red-200'
                                     }`}
                                     onClick={(e) => {
@@ -2357,9 +2357,9 @@ Rami - Credit With Rami`
                     <div className="flex space-x-4">
                       <button
                         onClick={handleCompleteAppointment}
-                        disabled={isUpdatingStatus || selectedAppointment.status === 'completed'}
+                        disabled={isUpdatingStatus || selectedAppointment.status === Status.COMPLETED}
                         className={`flex-1 py-4 px-6 rounded-lg transition-colors flex items-center justify-center font-semibold text-lg ${
-                          selectedAppointment.status === 'completed'
+                          selectedAppointment.status === Status.COMPLETED
                             ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                             : isUpdatingStatus
                             ? 'bg-green-500 text-white cursor-not-allowed'
@@ -2374,16 +2374,16 @@ Rami - Credit With Rami`
                         ) : (
                           <>
                             <CheckCircle className="w-6 h-6 mr-3" />
-                            {selectedAppointment.status === 'completed' ? 'Already Completed' : 'Mark as Completed'}
+                            {selectedAppointment.status === Status.COMPLETED ? 'Already Completed' : 'Mark as Completed'}
                           </>
                         )}
                       </button>
                       
                       <button
                         onClick={handleCancelAppointment}
-                        disabled={isUpdatingStatus || selectedAppointment.status === 'cancelled'}
+                        disabled={isUpdatingStatus || selectedAppointment.status === Status.CANCELLED}
                         className={`flex-1 py-4 px-6 rounded-lg transition-colors flex items-center justify-center font-semibold text-lg ${
-                          selectedAppointment.status === 'cancelled'
+                          selectedAppointment.status === Status.CANCELLED
                             ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                             : isUpdatingStatus
                             ? 'bg-red-500 text-white cursor-not-allowed'
@@ -2398,7 +2398,7 @@ Rami - Credit With Rami`
                         ) : (
                           <>
                             <X className="w-6 h-6 mr-3" />
-                            {selectedAppointment.status === 'cancelled' ? 'Already Cancelled' : 'Cancel Appointment'}
+                            {selectedAppointment.status === Status.CANCELLED ? 'Already Cancelled' : 'Cancel Appointment'}
                           </>
                         )}
                       </button>
