@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAppointment, getAppointments } from '@/lib/database'
+import { createAppointment, getAppointments } from '@/lib/database-prisma'
 
 export async function POST(request: NextRequest) {
   try {

@@ -76,3 +76,4 @@ complete-deployment.sh
 deploy.sh
 server-deploy.sh
 upload-to-server.sh
+/src/generated/prisma

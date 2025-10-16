@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateAppointment, deleteAppointment, getAppointmentById } from '@/lib/database'
+import { updateAppointment, deleteAppointment, getAppointmentById } from '@/lib/database-prisma'
 
 export async function PUT(
   request: NextRequest,
