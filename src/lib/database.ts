@@ -130,6 +130,8 @@ export const getAllAppointments = (): Appointment[] => {
   return appointments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
+export const getAppointments = getAllAppointments; // Alias for API compatibility
+
 export const getAppointmentById = (id: string): Appointment | undefined => {
   // Reload appointments from storage first (in case they were updated)
   loadAppointmentsFromStorage();
@@ -194,6 +196,26 @@ export const getAppointmentsByDateRange = (startDate: string, endDate: string): 
     const end = new Date(endDate);
     return appointmentDate >= start && appointmentDate <= end;
   });
+};
+
+export const deleteAppointment = (id: string): boolean => {
+  // Reload appointments from storage first (in case they were updated)
+  loadAppointmentsFromStorage();
+  
+  const initialLength = appointments.length;
+  appointments = appointments.filter(appointment => appointment.id !== id);
+  
+  if (appointments.length < initialLength) {
+    // Save to localStorage (client) and file (server)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('appointments', JSON.stringify(appointments));
+    } else {
+      saveAppointmentsToFile();
+    }
+    return true;
+  }
+  
+  return false;
 };
 
 // Admin authentication functions

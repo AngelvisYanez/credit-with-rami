@@ -1,22 +1,21 @@
-redirectsOrigin = "inline"
 headersOrigin = "inline"
+redirectsOrigin = "inline"
 
 [images]
-remote_images = ["^(?:http:\\/\\/localhost:3000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$", "^(?:http:\\/\\/(?!\\.)[^/]*?:3000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
+remote_images = ["^(?:https:\\/\\/ui-avatars\\.com\\/api(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
 
 [functions]
 
 [functions."*"]
-node_bundler = "esbuild"
 
 [[plugins]]
-origin = "default"
+origin = "config"
 package = "@netlify/plugin-nextjs"
 
 [plugins.inputs]
 
 [build]
-publish = "/Users/cesararteaga/rami/.next"
+publish = "C:\\Users\\ismaa\\OneDrive\\Escritorio\\artica\\creditwhirami\\.next"
 publishOrigin = "config"
 commandOrigin = "config"
 command = "npm run build"
@@ -37,25 +36,46 @@ NODE_VERSION = "18"
 [build.services]
 
 [[headers]]
+for = "/*"
+
+[headers.values]
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+for = "/static/*"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "*.jpg"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "*.png"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "*.mp4"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
 for = "/_next/static/*"
 
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200.0
-force = false
-
-[redirects.query]
-
-[redirects.conditions]
-
-[redirects.headers]
-
-[[redirects]]
-from = "/_next/image"
+from = "/_next/image/"
 to = "/.netlify/images?url=:url&w=:width&q=:quality"
 status = 200.0
 force = false

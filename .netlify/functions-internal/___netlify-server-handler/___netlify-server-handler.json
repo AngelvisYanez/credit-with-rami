@@ -1,1 +1,1 @@
-{"config":{"name":"Next.js Server Handler","generator":"@netlify/plugin-nextjs@5.13.3","nodeBundler":"none","includedFiles":["**"],"includedFilesBasePath":"/Users/cesararteaga/rami/.netlify/functions-internal/___netlify-server-handler"},"version":1}
+{"config":{"name":"Next.js Server Handler","generator":"@netlify/plugin-nextjs@5.14.0","nodeBundler":"none","includedFiles":["**"],"includedFilesBasePath":"C:\\Users\\ismaa\\OneDrive\\Escritorio\\artica\\creditwhirami\\.netlify\\functions-internal\\___netlify-server-handler"},"version":1}

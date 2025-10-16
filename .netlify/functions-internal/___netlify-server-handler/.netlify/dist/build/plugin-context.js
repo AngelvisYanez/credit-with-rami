@@ -6,7 +6,7 @@
     
 import {
   require_semver
-} from "../esm-chunks/chunk-TLQCAGE2.js";
+} from "../esm-chunks/chunk-TVEBGDAB.js";
 import {
   __toESM
 } from "../esm-chunks/chunk-6BT4RYQJ.js";
@@ -25,12 +25,12 @@ var DEFAULT_PUBLISH_DIR = ".next";
 var SERVER_HANDLER_NAME = "___netlify-server-handler";
 var EDGE_HANDLER_NAME = "___netlify-edge-handler";
 var PluginContext = class {
+  constants;
   featureFlags;
   netlifyConfig;
   pluginName;
   pluginVersion;
   utils;
-  constants;
   packageJSON;
   /** Absolute path of the next runtime plugin directory */
   pluginDir = PLUGIN_DIR;
@@ -149,6 +149,10 @@ var PluginContext = class {
   /** Absolute path of the edge handler */
   get edgeHandlerDir() {
     return join(this.edgeFunctionsDir, EDGE_HANDLER_NAME);
+  }
+  /** Absolute path to the skew protection config */
+  get skewProtectionConfigPath() {
+    return this.resolveFromPackagePath(".netlify/v1/skew-protection.json");
   }
   constructor(options) {
     this.constants = options.constants;

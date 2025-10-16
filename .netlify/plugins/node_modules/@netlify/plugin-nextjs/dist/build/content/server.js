@@ -13,7 +13,7 @@ import {
 } from "../../esm-chunks/chunk-YUXQHOYO.js";
 import {
   require_semver
-} from "../../esm-chunks/chunk-TLQCAGE2.js";
+} from "../../esm-chunks/chunk-TVEBGDAB.js";
 import {
   __toESM
 } from "../../esm-chunks/chunk-6BT4RYQJ.js";
@@ -89,7 +89,7 @@ var copyNextServerCode = async (ctx) => {
         `server/*`,
         `server/chunks/**/*`,
         `server/edge-chunks/**/*`,
-        `server/edge/chunks/**/*`,
+        `server/edge/**/*`,
         `server/+(app|pages)/**/*.js`
       ],
       {
@@ -189,13 +189,19 @@ async function patchNextModules(ctx, nextVersion, serverHandlerRequireResolve) {
 var copyNextDependencies = async (ctx) => {
   await tracer.withActiveSpan("copyNextDependencies", async () => {
     const entries = await readdir(ctx.standaloneDir);
+    const filter = ctx.constants.IS_LOCAL ? void 0 : nodeModulesFilter;
     const promises = entries.map(async (entry) => {
       if (entry === ctx.nextDistDir) {
         return;
       }
       const src = join(ctx.standaloneDir, entry);
       const dest = join(ctx.serverHandlerDir, entry);
-      await cp(src, dest, { recursive: true, verbatimSymlinks: true, force: true });
+      await cp(src, dest, {
+        recursive: true,
+        verbatimSymlinks: true,
+        force: true,
+        filter
+      });
       if (entry === "node_modules") {
         await recreateNodeModuleSymlinks(ctx.resolveFromSiteDir("node_modules"), dest);
       }
@@ -204,7 +210,7 @@ var copyNextDependencies = async (ctx) => {
     const rootDestDir = join(ctx.serverHandlerRootDir, "node_modules");
     if (existsSync(rootSrcDir) && ctx.standaloneRootDir !== ctx.standaloneDir) {
       promises.push(
-        cp(rootSrcDir, rootDestDir, { recursive: true, verbatimSymlinks: true }).then(
+        cp(rootSrcDir, rootDestDir, { recursive: true, verbatimSymlinks: true, filter }).then(
           () => recreateNodeModuleSymlinks(resolve("node_modules"), rootDestDir)
         )
       );
@@ -294,6 +300,12 @@ var verifyHandlerDirStructure = async (ctx) => {
       `Failed creating server handler. BUILD_ID file not found at expected location "${expectedBuildIDPath}".`
     );
   }
+};
+var nodeModulesFilter = async (sourcePath) => {
+  if (sourcePath.includes(".pnpm") && (sourcePath.includes("linuxmusl-x64") || sourcePath.includes("linux-x64-musl"))) {
+    return false;
+  }
+  return true;
 };
 export {
   copyNextDependencies,
