@@ -566,7 +566,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     }
   }
 
-  const moveAppointmentToStage = async (appointmentId: string, newStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
+  const moveAppointmentToStage = async (appointmentId: string, newStatus: Status) => {
     setIsUpdatingStatus(true)
     setUpdateMessage(null)
 
@@ -590,11 +590,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     try {
       // Determine the action based on the new status
       let action: string
-      if (newStatus === 'completed') {
+      if (newStatus === Status.COMPLETED) {
         action = 'complete'
-      } else if (newStatus === 'cancelled') {
+      } else if (newStatus === Status.CANCELLED) {
         action = 'cancel'
-      } else if (newStatus === 'confirmed') {
+      } else if (newStatus === Status.CONFIRMED) {
         // For confirmed status, we need to update the appointment directly
         const response = await fetch(`/api/appointments/${appointmentId}`, {
           method: 'PUT',
@@ -720,10 +720,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
     // Map stage IDs to status
     const stageToStatus: { [key: string]: Appointment['status'] } = {
-      'new-leads': 'pending',
-      'in-progress': 'confirmed',
-      'completed': 'completed',
-      'cancelled': 'cancelled'
+      'new-leads': Status.PENDING,
+      'in-progress': Status.CONFIRMED,
+      'completed': Status.COMPLETED,
+      'cancelled': Status.CANCELLED
     }
 
     const newStatus = stageToStatus[newStage]
@@ -1329,10 +1329,10 @@ Rami - Credit With Rami`
 
   const getStatusColor = (status: Appointment['status']) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'confirmed': return 'bg-blue-100 text-blue-800'
-      case 'completed': return 'bg-green-100 text-green-800'
-      case 'cancelled': return 'bg-red-100 text-red-800'
+      case Status.PENDING: return 'bg-yellow-100 text-yellow-800'
+      case Status.CONFIRMED: return 'bg-blue-100 text-blue-800'
+      case Status.COMPLETED: return 'bg-green-100 text-green-800'
+      case Status.CANCELLED: return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -2146,9 +2146,9 @@ Rami - Credit With Rami`
                   icon={<Plus className="w-6 h-6 text-blue-600" />}
                   onEditDate={handleEditDate}
                   onEditLead={handleEditLead}
-                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
-                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
-                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                  onComplete={(id) => moveAppointmentToStage(id, Status.COMPLETED)}
+                  onCancel={(id) => moveAppointmentToStage(id, Status.CANCELLED)}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, Status.CONFIRMED)}
                 />
 
                 <DroppableColumn
@@ -2161,9 +2161,9 @@ Rami - Credit With Rami`
                   icon={<Clock className="w-6 h-6 text-yellow-600" />}
                   onEditDate={handleEditDate}
                   onEditLead={handleEditLead}
-                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
-                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
-                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                  onComplete={(id) => moveAppointmentToStage(id, Status.COMPLETED)}
+                  onCancel={(id) => moveAppointmentToStage(id, Status.CANCELLED)}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, Status.CONFIRMED)}
                 />
 
                 <DroppableColumn
@@ -2176,9 +2176,9 @@ Rami - Credit With Rami`
                   icon={<CheckCircle className="w-6 h-6 text-green-600" />}
                   onEditDate={handleEditDate}
                   onEditLead={handleEditLead}
-                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
-                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
-                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                  onComplete={(id) => moveAppointmentToStage(id, Status.COMPLETED)}
+                  onCancel={(id) => moveAppointmentToStage(id, Status.CANCELLED)}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, Status.CONFIRMED)}
                 />
 
                 <DroppableColumn
@@ -2191,9 +2191,9 @@ Rami - Credit With Rami`
                   icon={<X className="w-6 h-6 text-red-600" />}
                   onEditDate={handleEditDate}
                   onEditLead={handleEditLead}
-                  onComplete={(id) => moveAppointmentToStage(id, 'completed')}
-                  onCancel={(id) => moveAppointmentToStage(id, 'cancelled')}
-                  onMoveToProgress={(id) => moveAppointmentToStage(id, 'confirmed')}
+                  onComplete={(id) => moveAppointmentToStage(id, Status.COMPLETED)}
+                  onCancel={(id) => moveAppointmentToStage(id, Status.CANCELLED)}
+                  onMoveToProgress={(id) => moveAppointmentToStage(id, Status.CONFIRMED)}
                 />
               </div>
 
