@@ -50,9 +50,13 @@ logs
 
 # Backup files and folders
 backup/
+backup/**/*
 *.zip
 *.tar.gz
 temp-build/
+
+# Deploy folders
+credit-with-rami-*/
 
 # Netlify build files
 .netlify/

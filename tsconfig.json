@@ -49,6 +49,9 @@
   ],
   "exclude": [
     "node_modules",
-    "credit-with-rami-deploy"
+    "credit-with-rami-deploy",
+    "backup",
+    "backup/**/*",
+    "credit-with-rami-*"
   ]
 }
