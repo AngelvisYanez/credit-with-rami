@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react'
-import { Appointment, reloadAppointments, Status } from '@/lib/database-prisma'
+import { Appointment, reloadAppointments } from '@/lib/database-prisma'
+import { Status } from '@prisma/client'
 import {
   DndContext,
   closestCenter,
