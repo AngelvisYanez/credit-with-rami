@@ -21,12 +21,17 @@ export async function POST(request: NextRequest) {
       email,
       phone,
       businessName: businessName || '',
+      businessType: '',
+      creditCards: '',
+      establishedBusiness: '',
+      strongCreditScore: '',
+      cleanHistory: '',
       message: message || '',
       preferredDate: preferredDate || '',
       preferredTime: preferredTime || '',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      isEligible: false
+      timezone: '',
+      isEligible: false,
+      eligibilityReason: ''
     })
 
     return NextResponse.json(appointment, { status: 201 })
