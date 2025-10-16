@@ -1,7 +1,8 @@
 module.exports = {
   apps: [{
     name: 'credit-with-rami',
-    script: 'server.js',
+    script: 'npm',
+    args: 'start',
     cwd: process.cwd(),
     instances: 1,
     autorestart: true,

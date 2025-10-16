@@ -7,10 +7,9 @@ const nextConfig = {
   experimental: {
     // Deshabilitar optimizaciones que consumen mucha memoria
     optimizeCss: false,
+    optimizePackageImports: false,
     // Usar SWC en lugar de Babel para menor uso de memoria
     swcMinify: true,
-    // Deshabilitar WebAssembly completamente
-    webVitalsAttribution: false,
   },
   
   // Configuración de compilación para reducir uso de memoria
