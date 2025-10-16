@@ -476,7 +476,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       }
 
       // First reload from localStorage
-      const localAppointments = reloadAppointments()
+      const localAppointments = await reloadAppointments()
       if (localAppointments.length > 0) {
         setAppointments(localAppointments)
         calculateStats(localAppointments)
