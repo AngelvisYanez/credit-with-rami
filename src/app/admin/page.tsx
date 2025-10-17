@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+
+// Deshabilitar prerenderización estática
+export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react'
 import { Appointment, reloadAppointments } from '@/lib/database-prisma'

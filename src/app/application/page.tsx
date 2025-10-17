@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
+
+// Deshabilitar prerenderización estática
+export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Menu, X, Phone, Mail } from 'lucide-react'
