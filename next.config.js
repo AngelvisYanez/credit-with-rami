@@ -2,7 +2,7 @@
 const nextConfig = {
   // Configuración específica para Vercel
   experimental: {
-    webVitalsAttribution: [],
+    webVitalsAttribution: ['CLS', 'FCP', 'FID', 'INP', 'LCP', 'TTFB'],
   },
   
   // Configuración de compilación
