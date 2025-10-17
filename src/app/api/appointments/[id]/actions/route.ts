@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateAppointmentStatus, getAppointmentById } from '@/lib/database-prisma'
+import { updateAppointmentStatus } from '@/lib/database-prisma'
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id } = params
     const body = await request.json()
-    const { action, status, notes } = body
+    const { action, status } = body
 
     if (!action) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(
               { status: 400 }
             )
           }
-          updatedAppointment = await updateAppointmentStatus(id, status as any)
+          updatedAppointment = await updateAppointmentStatus(id, status as 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED')
           break
         default:
           return NextResponse.json(
@@ -60,9 +60,9 @@ export async function POST(
 
       appointment = updatedAppointment
     } catch (prismaError) {
-      console.log('Prisma not available, using local database:', prismaError.message)
+      console.log('Prisma not available, using local database:', prismaError instanceof Error ? prismaError.message : 'Unknown error')
       // Fallback to local database
-      const { updateAppointmentStatus: updateAppointmentStatusLocal, getAppointmentById: getAppointmentByIdLocal } = await import('@/lib/database')
+      // Fallback to local database
       
       // Get the appointment first
       const allAppointments = await import('@/lib/database').then(m => m.getAllAppointments())
@@ -109,7 +109,7 @@ export async function POST(
       // Update the appointment
       const updatedAppointmentLocal = {
         ...foundAppointment,
-        status: newStatus as any,
+        status: newStatus as 'pending' | 'confirmed' | 'completed' | 'cancelled',
         updatedAt: new Date().toISOString()
       }
 

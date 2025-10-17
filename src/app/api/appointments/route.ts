@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         eligibilityReason: eligibilityReason || ''
       })
     } catch (prismaError) {
-      console.log('Prisma not available, using local database:', prismaError.message)
+      console.log('Prisma not available, using local database:', prismaError instanceof Error ? prismaError.message : 'Unknown error')
       // Fallback to local database
       appointment = createAppointmentLocal({
         name,
@@ -91,7 +91,7 @@ export async function GET() {
     try {
       appointments = await getAppointmentsPrisma()
     } catch (prismaError) {
-      console.log('Prisma not available, using local database:', prismaError.message)
+      console.log('Prisma not available, using local database:', prismaError instanceof Error ? prismaError.message : 'Unknown error')
       // Fallback to local database
       appointments = getAppointmentsLocal()
     }

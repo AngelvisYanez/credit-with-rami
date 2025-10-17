@@ -10,7 +10,7 @@ const nextConfig = {
     // Usar SWC en lugar de Babel para menor uso de memoria
     swcMinify: true,
     // Deshabilitar WebAssembly completamente
-    webVitalsAttribution: false,
+    webVitalsAttribution: [],
   },
   
   // Configuración de compilación para reducir uso de memoria

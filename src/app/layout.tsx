@@ -1,8 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://creditwithrami.com'),
@@ -54,7 +51,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="alternate icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className="font-sans antialiased">
         <div id="root">
           {children}
         </div>

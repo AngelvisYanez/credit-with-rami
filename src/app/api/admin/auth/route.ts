@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     try {
       admin = await authenticateAdmin(username, password)
     } catch (prismaError) {
-      console.log('Prisma not available, using local database:', prismaError.message)
+      console.log('Prisma not available, using local database:', prismaError instanceof Error ? prismaError.message : 'Unknown error')
       // Fallback to local database
       const { authenticateAdmin: authenticateAdminLocal } = await import('@/lib/database')
       admin = authenticateAdminLocal(username, password)
@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
 
     if (admin) {
       // Remove password from response
-      const { password: _, ...adminWithoutPassword } = admin
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _password, ...adminWithoutPassword } = admin
       
       return NextResponse.json({
         success: true,
