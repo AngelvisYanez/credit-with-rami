@@ -7,7 +7,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const { name, email, phone, businessName, message, preferredDate, preferredTime } = body
+    const { 
+      name, 
+      email, 
+      phone, 
+      businessName, 
+      businessType,
+      creditCards,
+      establishedBusiness,
+      strongCreditScore,
+      cleanHistory,
+      message, 
+      preferredDate, 
+      preferredTime,
+      timezone,
+      isEligible,
+      eligibilityReason
+    } = body
     
     if (!name || !email || !phone) {
       return NextResponse.json(
@@ -24,17 +40,17 @@ export async function POST(request: NextRequest) {
         email,
         phone,
         businessName: businessName || '',
-        businessType: '',
-        creditCards: '',
-        establishedBusiness: '',
-        strongCreditScore: '',
-        cleanHistory: '',
+        businessType: businessType || '',
+        creditCards: creditCards || '',
+        establishedBusiness: establishedBusiness || '',
+        strongCreditScore: strongCreditScore || '',
+        cleanHistory: cleanHistory || '',
         message: message || '',
         preferredDate: preferredDate || '',
         preferredTime: preferredTime || '',
-        timezone: '',
-        isEligible: false,
-        eligibilityReason: ''
+        timezone: timezone || 'EST',
+        isEligible: isEligible || false,
+        eligibilityReason: eligibilityReason || ''
       })
     } catch (prismaError) {
       console.log('Prisma not available, using local database:', prismaError.message)
@@ -44,17 +60,17 @@ export async function POST(request: NextRequest) {
         email,
         phone,
         businessName: businessName || '',
-        businessType: '',
-        creditCards: '',
-        establishedBusiness: '',
-        strongCreditScore: '',
-        cleanHistory: '',
+        businessType: businessType || '',
+        creditCards: creditCards || '',
+        establishedBusiness: establishedBusiness || '',
+        strongCreditScore: strongCreditScore || '',
+        cleanHistory: cleanHistory || '',
         message: message || '',
         preferredDate: preferredDate || '',
         preferredTime: preferredTime || '',
-        timezone: '',
-        isEligible: false,
-        eligibilityReason: ''
+        timezone: timezone || 'EST',
+        isEligible: isEligible || false,
+        eligibilityReason: eligibilityReason || ''
       })
     }
 
