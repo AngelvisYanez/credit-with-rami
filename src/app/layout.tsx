@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import StructuredData from '@/components/StructuredData'
+import MetaPixel from '@/components/MetaPixel'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://creditwithrami.com'),
@@ -100,6 +101,7 @@ export default function RootLayout({
         <link rel="alternate icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="font-sans antialiased">
+        <MetaPixel />
         <StructuredData />
         <div id="root">
           {children}
