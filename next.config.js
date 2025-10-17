@@ -5,6 +5,9 @@ const nextConfig = {
     webVitalsAttribution: ['CLS', 'FCP', 'FID', 'INP', 'LCP', 'TTFB'],
   },
   
+  // Deshabilitar prerenderización estática para evitar errores de React Context
+  output: 'standalone',
+  
   // Configuración de compilación
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',

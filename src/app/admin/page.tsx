@@ -1,19 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import type { Metadata } from 'next'
 
 // Deshabilitar prerenderización estática
 export const dynamic = 'force-dynamic'
-
-export const metadata: Metadata = {
-  title: 'Admin Dashboard - Credit with Rami',
-  description: 'Administrative dashboard for Credit with Rami business funding platform. Manage appointments, clients, and business operations.',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
 import Image from 'next/image'
 import { Calendar, Clock, User, Phone, Mail, Building, CheckCircle, AlertCircle, X, LogOut, Search, Filter, Download, TrendingUp, Users, BarChart3, ChevronLeft, ChevronRight, RefreshCw, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react'
 import { Appointment, reloadAppointments } from '@/lib/database-prisma'
