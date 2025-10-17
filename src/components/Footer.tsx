@@ -106,7 +106,7 @@ Contact
               </li>
               <li className="flex items-start space-x-2 sm:space-x-3">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300 text-sm sm:text-base">2625 SE 13th St. Homestead, FL 33035</span>
+                <span className="text-gray-300 text-sm sm:text-base">2701 Ponce De Leon. Suite 301, Coral Gables, FL 33134</span>
               </li>
             </ul>
           </div>

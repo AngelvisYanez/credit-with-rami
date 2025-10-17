@@ -61,7 +61,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Location</h4>
-                    <p className="text-gray-600">2625 SE 13th St. Homestead, FL 33035</p>
+                    <p className="text-gray-600">2701 Ponce De Leon. Suite 301, Coral Gables, FL 33134</p>
                   </div>
                 </div>
               </div>

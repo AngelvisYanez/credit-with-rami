@@ -13,10 +13,10 @@ export default function StructuredData() {
     "email": "info@creditwithrami.com",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "2625 SE 13th St",
-      "addressLocality": "Homestead",
+      "streetAddress": "2701 Ponce De Leon. Suite 301",
+      "addressLocality": "Coral Gables",
       "addressRegion": "FL",
-      "postalCode": "33035",
+      "postalCode": "33134",
       "addressCountry": "US"
     },
     "founder": {
