@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAppointment, getAppointments } from '@/lib/database-prisma'
+import { createAppointment as createAppointmentPrisma, getAppointments as getAppointmentsPrisma } from '@/lib/database-prisma'
+import { createAppointment as createAppointmentLocal, getAllAppointments as getAppointmentsLocal } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,24 +16,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create appointment
-    const appointment = await createAppointment({
-      name,
-      email,
-      phone,
-      businessName: businessName || '',
-      businessType: '',
-      creditCards: '',
-      establishedBusiness: '',
-      strongCreditScore: '',
-      cleanHistory: '',
-      message: message || '',
-      preferredDate: preferredDate || '',
-      preferredTime: preferredTime || '',
-      timezone: '',
-      isEligible: false,
-      eligibilityReason: ''
-    })
+    // Try Prisma first, fallback to local database
+    let appointment
+    try {
+      appointment = await createAppointmentPrisma({
+        name,
+        email,
+        phone,
+        businessName: businessName || '',
+        businessType: '',
+        creditCards: '',
+        establishedBusiness: '',
+        strongCreditScore: '',
+        cleanHistory: '',
+        message: message || '',
+        preferredDate: preferredDate || '',
+        preferredTime: preferredTime || '',
+        timezone: '',
+        isEligible: false,
+        eligibilityReason: ''
+      })
+    } catch (prismaError) {
+      console.log('Prisma not available, using local database:', prismaError.message)
+      // Fallback to local database
+      appointment = createAppointmentLocal({
+        name,
+        email,
+        phone,
+        businessName: businessName || '',
+        businessType: '',
+        creditCards: '',
+        establishedBusiness: '',
+        strongCreditScore: '',
+        cleanHistory: '',
+        message: message || '',
+        preferredDate: preferredDate || '',
+        preferredTime: preferredTime || '',
+        timezone: '',
+        isEligible: false,
+        eligibilityReason: ''
+      })
+    }
 
     return NextResponse.json(appointment, { status: 201 })
   } catch (error) {
@@ -46,7 +70,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const appointments = await getAppointments()
+    // Try Prisma first, fallback to local database
+    let appointments
+    try {
+      appointments = await getAppointmentsPrisma()
+    } catch (prismaError) {
+      console.log('Prisma not available, using local database:', prismaError.message)
+      // Fallback to local database
+      appointments = getAppointmentsLocal()
+    }
+    
     return NextResponse.json(appointments)
   } catch (error) {
     console.error('Error fetching appointments:', error)
