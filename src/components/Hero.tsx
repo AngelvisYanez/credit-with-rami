@@ -119,7 +119,7 @@ const Hero = () => {
                   
                   {/* Middle Section - Card Number */}
                   <div className="flex-1 flex items-center">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wider group-hover:tracking-widest transition-all duration-500">5337 8622 4901 3294</div>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wider group-hover:tracking-widest transition-all duration-500">4537 8622 4901 3294</div>
                   </div>
                   
                   {/* Bottom Section */}
