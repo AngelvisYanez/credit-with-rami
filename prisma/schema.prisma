@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x"]
@@ -12,25 +9,25 @@ datasource db {
 }
 
 model Appointment {
-  id                String   @id @default(cuid())
-  name              String
-  email             String   @unique
-  phone             String
-  businessName      String
-  businessType      String?
-  creditCards       String?
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  phone               String
+  businessName        String
+  businessType        String?
+  creditCards         String?
   establishedBusiness String?
-  strongCreditScore String?
-  cleanHistory      String?
-  preferredDate     String?
-  preferredTime     String?
-  timezone          String?
-  message           String?
-  isEligible        Boolean  @default(false)
-  eligibilityReason String?
-  status            Status   @default(PENDING)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  strongCreditScore   String?
+  cleanHistory        String?
+  preferredDate       String?
+  preferredTime       String?
+  timezone            String?
+  message             String?
+  isEligible          Boolean  @default(false)
+  eligibilityReason   String?
+  status              Status   @default(PENDING)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("appointments")
 }
