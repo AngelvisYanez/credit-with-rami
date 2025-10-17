@@ -23,7 +23,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:status": "prisma migrate status",
-    "deploy:prisma": "node scripts/setup-prisma.js"
+    "deploy:prisma": "node scripts/setup-prisma.js",
+    "verify:vercel": "node scripts/verify-vercel-setup.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
