@@ -205,6 +205,7 @@ const ApplicationPage = () => {
                 className="w-full h-full rounded-xl"
                 controls
                 preload="metadata"
+                playsInline
                 onLoadStart={() => console.log('Video load started')}
                 onLoadedMetadata={() => console.log('Video metadata loaded')}
                 onCanPlay={() => console.log('Video can play')}
@@ -221,7 +222,7 @@ const ApplicationPage = () => {
                 }}
               >
                 <source src="/rami-video.mp4" type="video/mp4" />
-                <p>Your browser does not support the video tag.</p>
+                <p>Tu navegador no soporta el elemento video.</p>
               </video>
             </div>
           </div>
